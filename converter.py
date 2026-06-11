@@ -268,6 +268,7 @@ class ConversionPage(QWidget, CurrencyMixin):
         root.addLayout(center_grid)
 
         bottom = QHBoxLayout()
+
         self.load_last_button = QPushButton("Последний\nрасчёт")
         self.load_last_button.clicked.connect(self.load_last_calculation_into_form)
         self.load_last_button.setFixedSize(170, 90)
@@ -282,14 +283,28 @@ class ConversionPage(QWidget, CurrencyMixin):
         self.saved_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.saved_info_label.setMinimumSize(320, 90)
         bottom.addWidget(self.saved_info_label)
+
         root.addLayout(bottom)
 
         self.refresh_currency_combos()
         self.refresh_saved_info_box()
 
+    def format_number(self, value: float) -> str:
+        if abs(value) >= 1_000_000_000:
+            return f"{value:.10g}"
+
+        text = f"{value:.10f}"
+        text = text.rstrip("0").rstrip(".")
+
+        if text == "-0":
+            text = "0"
+
+        return text
+
     def _numbered_box(self, widget: QWidget, label_text: str | None = None) -> QWidget:
         container = QFrame()
         container.setFrameShape(QFrame.Shape.NoFrame)
+
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
@@ -370,6 +385,7 @@ class ConversionPage(QWidget, CurrencyMixin):
             return
 
         amount_text = self.amount_edit.text().strip().replace(",", ".")
+
         if not amount_text:
             self.result_label.setText("Результат появится здесь")
             return
@@ -402,7 +418,12 @@ class ConversionPage(QWidget, CurrencyMixin):
             "rate_snapshot": self.current_rates[from_currency] / self.current_rates[to_currency],
         }
 
-        self.result_label.setText(f"{amount:.6g} {from_currency} = {result:.6g} {to_currency}")
+        amount_display = self.format_number(amount)
+        result_display = self.format_number(result)
+
+        self.result_label.setText(
+            f"{amount_display} {from_currency} = {result_display} {to_currency}"
+        )
 
     def save_current_calculation(self) -> None:
         if not self.last_calculation_data:
@@ -437,6 +458,7 @@ class ConversionPage(QWidget, CurrencyMixin):
 
         if from_index >= 0:
             self.from_combo.setCurrentIndex(from_index)
+
         if to_index >= 0:
             self.to_combo.setCurrentIndex(to_index)
 
@@ -446,18 +468,30 @@ class ConversionPage(QWidget, CurrencyMixin):
         rate_snapshot = data.get("rate_snapshot")
 
         rate_text = (
-            f"Курс при сохранении: 1 {from_currency} = {rate_snapshot:.6g} {to_currency}"
+            f"Курс при сохранении: 1 {from_currency} = "
+            f"{self.format_number(rate_snapshot)} {to_currency}"
             if isinstance(rate_snapshot, (int, float))
             else "Курс при сохранении: нет данных"
         )
 
-        saved_result_text = (
-            f"{saved_result:.6g}" if isinstance(saved_result, (int, float)) else str(saved_result)
+        amount_text = (
+            self.format_number(amount) if isinstance(amount, (int, float)) else str(amount)
         )
 
-        self.result_label.setText(f"{amount} {from_currency} = {saved_result_text} {to_currency}")
+        saved_result_text = (
+            self.format_number(saved_result)
+            if isinstance(saved_result, (int, float))
+            else str(saved_result)
+        )
+
+        self.result_label.setText(
+            f"{amount_text} {from_currency} = {saved_result_text} {to_currency}"
+        )
+
         self.saved_info_label.setText(
-            f"Дата сохранения: {date}\n{rate_text}\nСохранённый результат: {saved_result_text} {to_currency}"
+            f"Дата сохранения: {date}\n"
+            f"{rate_text}\n"
+            f"Сохранённый результат: {saved_result_text} {to_currency}"
         )
 
     def refresh_saved_info_box(self) -> None:
@@ -476,9 +510,16 @@ class ConversionPage(QWidget, CurrencyMixin):
         amount = data.get("amount", "?")
         result = data.get("result", "?")
 
-        result_text = f"{result:.6g}" if isinstance(result, (int, float)) else str(result)
+        amount_text = (
+            self.format_number(amount) if isinstance(amount, (int, float)) else str(amount)
+        )
+
+        result_text = (
+            self.format_number(result) if isinstance(result, (int, float)) else str(result)
+        )
+
         self.saved_info_label.setText(
-            f"Дата: {date}\n{amount} {from_currency} = {result_text} {to_currency}"
+            f"Дата: {date}\n{amount_text} {from_currency} = {result_text} {to_currency}"
         )
 
 
@@ -517,16 +558,16 @@ class HelpPage(QWidget):
         root.addSpacing(18)
 
         info = QLabel(
-            "Информация о работе программы\n\n"
-            "• Курсы RUB, USD, EUR, CNY, TRY, AED, KZT, BYN, UZS, AMD, GEL,\n"
-            "  KGS, JPY, AZN, INR, THB, EGP и CHF берутся с сайта ЦБ РФ.\n"
-            "• Курсы BTC и ETH берутся через CoinGecko.\n"
-            "• После этого можно выполнять конвертацию между всеми доступными валютами.\n"
-            "• Избранные валюты в меню конвертации показываются выше остальных и помечаются звёздочкой.\n"
-            "• В меню избранного показываются коды и реальные названия валют.\n"
-            "• Список избранного прокручивается.\n"
-            "• Последний расчёт можно сохранить в JSON и затем подставить снова."
+            "Как пользоваться конвертером\n\n"
+            "1. Нажмите «Начать конвертацию».\n"
+            "2. Введите сумму для перевода.\n"
+            "3. Выберите валюту, из которой нужно перевести.\n"
+            "4. Выберите валюту, в которую нужно перевести.\n"
+            "5. Результат появится автоматически.\n"
+            "6. При необходимости сохраните расчёт или загрузите последний сохранённый расчёт.\n"
+            "7. В разделе «Избранные валюты» можно отметить нужные валюты звёздочкой."
         )
+
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info.setWordWrap(True)
         info.setFrameShape(QFrame.Shape.Box)
@@ -635,6 +676,7 @@ class FavoritesPage(QWidget, CurrencyMixin):
             )
 
         index = self.currency_combo.findData(current_currency)
+
         if index >= 0:
             self.currency_combo.setCurrentIndex(index)
         else:
@@ -664,6 +706,7 @@ class FavoritesPage(QWidget, CurrencyMixin):
 
     def update_star_state(self) -> None:
         currency = self.currency_combo.currentData()
+
         if not currency:
             self.info_label.setText("Выберите валюту")
             self.star_button.setChecked(False)
@@ -709,7 +752,9 @@ class FavoritesPage(QWidget, CurrencyMixin):
             return
 
         for currency in sorted(self.favorites):
-            self.favorites_list.addItem(self.format_currency_display(currency, with_star=True))
+            self.favorites_list.addItem(
+                self.format_currency_display(currency, with_star=True)
+            )
 
 
 class MainWindow(QMainWindow):
@@ -727,6 +772,7 @@ class MainWindow(QMainWindow):
             open_favorites=self.open_favorites,
             exit_app=self.close,
         )
+
         self.conversion_page = ConversionPage(go_back=self.open_menu)
         self.help_page = HelpPage(go_back=self.open_menu)
         self.favorites_page = FavoritesPage(go_back=self.open_menu)
