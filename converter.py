@@ -287,13 +287,12 @@ class ConversionPage(QWidget, CurrencyMixin):
         )
         self.saved_info_label.setObjectName("boxedLabel")
         self.saved_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.saved_info_label.setMinimumSize(320, 90)
+        self.saved_info_label.setMinimumSize(360, 120)
         bottom.addWidget(self.saved_info_label)
 
         root.addLayout(bottom)
 
         self.refresh_currency_combos()
-        self.refresh_saved_info_box()
 
     def format_number(self, value: float) -> str:
         if abs(value) >= 1_000_000_000:
@@ -327,7 +326,6 @@ class ConversionPage(QWidget, CurrencyMixin):
         super().showEvent(event)
         self.refresh_currency_combos()
         self.fetch_rates()
-        self.refresh_saved_info_box()
         self.update_conversion()
 
     def get_sorted_currencies(self) -> list[str]:
@@ -438,7 +436,6 @@ class ConversionPage(QWidget, CurrencyMixin):
 
         try:
             StorageService.save_last_calculation(self.last_calculation_data)
-            self.refresh_saved_info_box()
             QMessageBox.information(self, "Сохранение", "Последний расчёт сохранён.")
         except Exception as error:
             QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить расчёт:\n{error}")
@@ -474,7 +471,7 @@ class ConversionPage(QWidget, CurrencyMixin):
         rate_snapshot = data.get("rate_snapshot")
 
         rate_text = (
-            f"Курс при сохранении: 1 {from_currency} = "
+            f"Курс: 1 {from_currency} = "
             f"{self.format_number(rate_snapshot)} {to_currency}"
             if isinstance(rate_snapshot, (int, float))
             else "Курс при сохранении: нет данных"
@@ -496,8 +493,9 @@ class ConversionPage(QWidget, CurrencyMixin):
 
         self.saved_info_label.setText(
             f"Дата сохранения: {date}\n"
-            f"{rate_text}\n"
-            f"Сохранённый результат: {saved_result_text} {to_currency}"
+            f"Введено: {amount_text} {from_currency}\n"
+            f"Получено: {saved_result_text} {to_currency}\n"
+            f"{rate_text}"
         )
 
     def refresh_saved_info_box(self) -> None:
