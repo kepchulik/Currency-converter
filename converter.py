@@ -251,7 +251,8 @@ class ConversionPage(QWidget, CurrencyMixin):
         self.from_combo = QComboBox()
         self.from_combo.currentTextChanged.connect(self.update_conversion)
         self.from_combo.setMinimumHeight(52)
-        self.from_combo.view().setMinimumWidth(100)
+        self.from_combo.setFixedWidth(115)
+        self.from_combo.view().setMinimumWidth(115)
         self.from_combo.setMaxVisibleItems(12)
 
         self.result_label = QLabel("Результат появится здесь")
@@ -262,7 +263,8 @@ class ConversionPage(QWidget, CurrencyMixin):
         self.to_combo = QComboBox()
         self.to_combo.currentTextChanged.connect(self.update_conversion)
         self.to_combo.setMinimumHeight(52)
-        self.to_combo.view().setMinimumWidth(100)
+        self.to_combo.setFixedWidth(115)
+        self.to_combo.view().setMinimumWidth(115)
         self.to_combo.setMaxVisibleItems(12)
 
         center_grid.addWidget(self._numbered_box(self.amount_edit), 0, 0)
